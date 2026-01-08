@@ -7,17 +7,30 @@
 
 namespace extensions {
 
-class NwMenuCreateItemFunction : public NWSyncExtensionFunction {
+class NwMenuGetNSStringWithFixupFunction : public NWSyncExtensionFunction {
  public:
-  NwMenuCreateItemFunction();
+  NwMenuGetNSStringWithFixupFunction(){}
   bool RunNWSync(base::ListValue* response, std::string* error) override;
-
+    
  protected:
-  ~NwMenuCreateItemFunction() override;
-
-  DECLARE_EXTENSION_FUNCTION("nw.Menu.createItem", UNKNOWN)
+  ~NwMenuGetNSStringWithFixupFunction() override {}
+    
+  DECLARE_EXTENSION_FUNCTION("nw.Menu.getNSStringWithFixup", UNKNOWN)
  private:
-  DISALLOW_COPY_AND_ASSIGN(NwMenuCreateItemFunction);
+  DISALLOW_COPY_AND_ASSIGN(NwMenuGetNSStringWithFixupFunction);
+};
+
+class NwMenuGetNSStringFWithFixupFunction : public NWSyncExtensionFunction {
+ public:
+  NwMenuGetNSStringFWithFixupFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+    
+ protected:
+  ~NwMenuGetNSStringFWithFixupFunction() override {}
+    
+  DECLARE_EXTENSION_FUNCTION("nw.Menu.getNSStringFWithFixup", UNKNOWN)
+ private:
+  DISALLOW_COPY_AND_ASSIGN(NwMenuGetNSStringFWithFixupFunction);
 };
 
 } // namespace extensions

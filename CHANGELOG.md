@@ -1,3 +1,217 @@
+0.13.4 / 04-08-2016
+===================
+- Update Chromium to 49.0.2623.112
+- Fix: webview local file issue [(#4668)](https://github.com/nwjs/nw.js/issues/4668)
+- Fix: Custom app icon with incorrect size under volume mixer [(#4649)](https://github.com/nwjs/nw.js/issues/4649)
+- Fix: process Event: 'uncaughtException' not working in 0.13 [(#4679)](https://github.com/nwjs/nw.js/issues/4679)
+- [docs] data-path -> user-data-dir; --disable-raf-throttling
+- [docs] Clarify files can be safely removed during packaging [(#4676)](https://github.com/nwjs/nw.js/issues/4676)
+
+0.13.3 / 04-04-2016
+===================
+- Update Node.js to 5.10.0
+- support --disable-raf-throttling to enable RequestAnimationFrame for background apps (#4664)
+- Fix: App will crash if CFBundleIdentifier in plist longer than 30 chrs (#4638)
+- Fix: Crash when open a pdf file in webview. (#4644)
+- Fix: [WIN] window restore size is changed when aero glass is on (#4323)
+- Fix: inject_js_end not working on remote pages (#4656)
+- Fix: Queries were sent to Google to update plugin metadata (#4669)
+- Fix: [WIN] Window size includes title bar (#4627)
+- Fix: Crash when bg-script calls nw.Window.get() (#4368)
+- Fix: Disabled menu item, still accessible via hotkey (#2261)
+- Fix: Unable to turn off / disable debug.log (#4637)
+- [docs] data-path -> user-data-dir
+- [docs] add link to buildbot
+- [docs] using flash plugin
+- [docs] location of nwjc and chromedriver
+
+0.13.2 / 03-29-2016
+===================
+- Update Chromium to 49.0.2623.110
+- Fix: crashes in CloseWatcher::CallbackAndDie sometimes (#4636)
+- Fix: nwsaveas is ignored when nwworkingdir is specified in nw13 (#4630)
+- Fix: "Inspect" Entry in Non-SDK PDF Viewer's Context Menu (#4642)
+
+0.13.1 / 03-25-2016
+===================
+- Update Chromium to 49.0.2623.108
+- Fix: Performance degradation in constructing typed array from node buffer (#4614)
+
+0.13.0 / 03-23-2016
+===================
+- Fix: [OSX] Cmd-Q does not pass true as the first argument to the event after createMacBuiltin() (#4580)
+- Fix: Window event 'move'/'resize' callback arguments undefined (#4610)
+- [docs] Update Command Line options with full list
+- [docs] List Chrome Extension APIs
+
+0.13.0-rc4 / 03-21-2016
+=======================
+- Update Node.js to 5.9.0
+- Fix: [WIN] unable to launch on XP 64bit system (#4600)
+- Fix: Crash when using `additional_trust_anchors`
+- Fix: Screen capture does not work in remote domain (#4579)
+- Fix: webview events not firing in remote page (#4590)
+- Fix: Crash when adding folder to workspace in devtools (#4602)
+- Fix: [OSX] Crash when using nw.Menu with chrome.identity.launchWebAuthFlow (#4591)
+- Fix: Crash when trying to open tabbed browser window (#4587, #4540)
+- Fix: Only top left corner of window icon is shown (#4581)
+- Fix: [OSX] Crash dumps doesn't match hashes of symbol files (#4450)
+- Fix: Crash on promise rejection handler (#4577)
+- Fix: Menu.popup blocks program (#4593)
+- Fix: [OSX] Cmd-Q does not pass true as the first argument to the event (#4580)
+- Fix: capturePage always return PNG (#4609)
+- [WIN] dump node.dll symbols
+- Remove context menu of notification (#4598)
+- Remove settings button of notification (#4582)
+- [docs] update crash dump location
+- [docs] add link for enable logging in FAQ
+- [docs] Reorder the navigation pane (#4576)
+- [docs] Multiple language resources in SDK build
+
+0.13.0-rc3 / 03-15-2016
+=======================
+- Enable auth password dialog
+- Enable notification permission for all origin (#4521, #4533)
+- Support chrome.contentSettings API (#4521)
+- Fix: wrong version and info for Pepper Flash plugin in registry (#4530)
+- Fix: [WIN] fix: window title and icon not shown
+- Fix: [WIN] start up fail where crashpad path is not found
+- Fix: nwjs 0.13.0 showed as chromium in taskbar on Linux (#4537)
+- [docs] more info on bg-script
+- [docs] transparecy needs frameless
+
+0.13.0-rc2 / 03-11-2016
+=======================
+- Update Chromium to 49.0.2623.87
+- Update Node.js to 5.8.0
+- Ship .pak files for non-English languages in SDK build
+- Build ffmpeg as Dll (#4492)
+- Disable notification of screen sharing (#4484)
+- Migrate indexed db files in user data dir (#4469)
+- Migrate local storage files for app protocol in user data dir (#4527)
+- Fix: node-main is broken (#4495)
+- Fix: app asks for confidential information for NWJS Safe Storage in keychain (#4458)
+- Fix: crash when navigate in some sites (#4422)
+- Fix: Use window subfields in manifest for newly created windows (#4221)
+- Fix: After press the “command+h” to minimize, but unable to recover (#4296)
+- Fix: crashpad handler error in windows (debug build unable to start)
+- Fix: Window title still shows with frame set to false on OSX (#4507)
+- Fix: The 'width' and 'height' in the manifest file does not work properly on OSX (#4493)
+- Fix: crash in chrome.app.window.create(url) without 2nd argument
+- Fix: nw.Window broken on 0.13.0-rc1 with --mixed-context (#4498)
+- Fix: Make menu callback work after navigation (#4313)
+- Fix: Show menubar menus from top-left anchor (#4473)
+- [docs] add 'Customize menubar' (#4416)
+
+0.13.0-rc1 / 03-03-2016
+=======================
+- Update Chromium to 49.0.2623.75
+- Update Node.js to 5.7.0
+- Add `nw.Screen.DesktopCaptureMonitor.registerStream()` for using stream id in `getUserMedia()` (#4459)
+- Fix: Wrong "restore" window size after click on the app in the taskbar on windows 10 (#4323)
+- [docs] chromedriver: a better way to arguments of nw app
+
+0.13.0-beta7 / 02-25-2016
+=========================
+- Update Chromium to 48.0.2564.116
+- Support loading devtools in/for webview by adding webview.showDevTools (#4411)
+- Fully support for devtools extensions (#612)
+- support loading local file in webview (#4425)
+- Fix: add URL scheme support for MAC (#4240)
+- Fix: alert/prompt dialog with nwjs style (#4413)
+- Fix: menubar button not found when navigate to another menu (#4371)
+
+0.13.0-beta6 / 02-17-2016
+=========================
+- Update Chromium to 48.0.2564.109
+- Update Node.js to 5.6.0
+- support controlling window with external page
+- Fix: enable self extraction (#4071)
+- Fix: crash when using native modules in OSX (#4338)
+- Fix: FileReader not working (#4399)
+- Fix: console tab with DevTools jail not working until switch frame manually
+- Fix: OSX menu support broken (#4374)
+- Fix: JavaScript dialogs text (#4190)
+- Fix: Typo: rename `App.(un)registerGlobalHotkey` to `App.(un)registerGlobalHotKey`
+- Fix: Window.zoomLevel changes all windows (#4352)
+- Fix: avoid polluting global namespace with 'path' etc. (#4350)
+- add URL scheme support for MAC (#4240)
+- support 'new_instance' option for Window.open
+- support native modules built by node-gyp
+- [docs] update for new_instance etc
+
+0.13.0-beta5 / 02-01-2016
+=========================
+- Update Chromium to 48.0.2564.97
+- Add back transparency support which is missing in beta4
+- support program args in chromedriver
+- port App.open argument (#4289)
+- support webkit.plugin field in manifest
+- Fix package script to support Win XP (#4181)
+- [OSX] disable double tap with 2 fingers by default and add option for it (#4249)
+- Fix: support window id in Window.open() (#4268)
+- Fix: permission for webRequest API (#4220)
+- rename 'inject-js-start' with 'inject_js_start' and add it to Window.open options (#4286)
+- rename 'always-on-top' with 'always_on_top', and 'visible-on-all-workspaces' with 'visible_on_all_workspaces'
+- Fix: infinite loop in nw.Window.close(true) (#4171)
+- Fix: Window title not changed by setting document.title (#3589)
+- Fix: startup slow because of scanning for invalid file name (#4303)
+- Fix: [OSX] suppress warning when opening devtools
+- Fix: conflict between promise rejection callbacks from Blink and Node (#4300)
+- Fix: Taking heap snapshot crashes webkit (#3678)
+- Fix: [OSX] App quits when closing window if window.show is false in manifest (#4187)
+- Fix: crash when opening external links with browser in devtools (#4269, #4121)
+- Fix: crash when opening external links with browser in print preview (#4270)
+- Fix: cookies API (#4199)
+- [docs] add enable-gcm
+- [docs] add double_tap_to_zoom_enabled
+- [docs] add FAQ for console.log
+- [docs] Updated FAQ for AnuglarJS 2
+
+0.13.0-beta4 / 01-18-2016
+=========================
+- Update Chromium to 48.0.2564.82
+- Update Node.js to 5.4.1
+- [OSX] Fix process.nextTick in some cases
+- [OSX] Fix hidden window title (#4186)
+- ported nw.App.fullArgv
+- Fix: nw.App.quit() does nothing when use JS file as main (#4227)
+
+0.13.0-beta3 / 01-13-2016
+=========================
+- Fix: save as... dialog not working (#4142)
+- Fix: app with hidden window will quit on start on osx
+- Fix: chrome socket api permission in NW app (#4143)
+- Fix: some Node core modules not working after close window (#4130, #4140)
+- Fix: chrome.fileSystem.restoreEntry breaks retainID on app reload (#4150)
+- Fix: oauth not working due to browser side naviagation (#4179, #4131, #4184)
+- Fix: Exception in nw.dll when running native module serialport (#4152)
+- Fix: window.open not loaded using node-remote (#4180)
+- Fix: POST form not working on navigation
+- Fix: nwjs Helper process not closed (#4118)
+- Fix: NW.js doesn't quit if DevTools has opened once (#4164)
+- Fix: window not closed when listen to 'close' event in another window (#4138)
+- Fix: [WIN] debug build of 'payload' tool
+- Fix: Crash when using devtools to view some source (#4121)
+- Fix: nw.Window.get() returns null after navigation (#4157, #4007)
+- Fix: requrie() function in the shim for nw12 compatibility (#4141)
+- Fix: Reversed x and y in win.moveTo and win.moveBy (#4136)
+- Accept array of matched patterns in node-remote (#4132)
+- [doc] Added docs for win.navigation event
+- [doc] Updated docs for single-instance
+- [doc] add hint for document contribution
+- [doc] update for Multiple Context mode
+- [doc] For Users > Getting Started. Revise example 2 sample code to cater new NW.JS API for Menu
+- [doc] update for Window.id
+
+0.13.0-beta2 / 12-31-2015
+=========================
+- Fix: application window is opened out of the screen on Windows.
+
+0.13.0-beta1 / 12-30-2015
+=========================
+- Most of nw.gui API ported
+
 0.12.3 / 07-31-2015
 ===================
 - Support Mac App Store with the 'macappstore' flavor

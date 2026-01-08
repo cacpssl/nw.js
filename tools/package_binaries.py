@@ -9,10 +9,11 @@ import shutil
 import sys
 import tarfile
 import zipfile
+from hashlib import sha256
 
 from subprocess import call
 
-steps = ['nw', 'chromedriver', 'symbol', 'headers', 'others']
+steps = ['nw', 'symbol', 'headers', 'others']
 ################################
 # Parse command line args
 parser = argparse.ArgumentParser(description='Package nw binaries.')
@@ -61,6 +62,12 @@ dist_dir = os.path.join(binaries_location, 'dist')
 
 print 'Working on ' + binaries_location
 
+nwfolder = os.path.join(dist_dir, '..', 'nwdist')
+try:
+    shutil.rmtree(nwfolder)
+except:
+    pass
+
 if args.icudat != None:
     #FIXME: for some reason they are the same file (hard link) and copy will fail
     os.remove(os.path.join(binaries_location, 'icudtl.dat'))
@@ -88,21 +95,16 @@ else:
 if platform_name == 'win':
     libfile = os.path.join(binaries_location, 'nw.lib')
     expfile = os.path.join(binaries_location, 'nw.exp')
+    libfile2 = os.path.join(binaries_location, 'node.lib')
+    expfile2 = os.path.join(binaries_location, 'node.exp')
+
     shutil.copy(os.path.join(binaries_location, 'nw.dll.lib'), libfile)
     shutil.copy(os.path.join(binaries_location, 'nw.dll.exp'), expfile)
+    shutil.copy(os.path.join(binaries_location, 'node.dll.lib'), libfile2)
+    shutil.copy(os.path.join(binaries_location, 'node.dll.exp'), expfile2)
 
 if platform_name == 'win':
     arch = 'ia32'
-
-if platform_name != 'osx':
-    try:
-        os.remove(os.path.join(binaries_location, 'en-US.pak'))
-    except OSError:
-        pass
-    shutil.copy(os.path.join(binaries_location, 'locales', 'en-US.pak'), binaries_location)
-    shutil.rmtree(os.path.join(binaries_location, 'locales'))
-    os.mkdir(os.path.join(binaries_location, 'locales'))
-    shutil.copy(os.path.join(binaries_location, 'en-US.pak'), os.path.join(binaries_location, 'locales'))
 
 if platform_name == 'osx':
     # detect output arch
@@ -139,6 +141,7 @@ def generate_target_nw(platform_name, arch, version):
                        'v', version,
                        '-', platform_name,
                        '-', arch])
+    target['keep4test'] = 'nwdist'
     # Compress type
     if platform_name == 'linux':
         target['compress'] = 'tar.gz'
@@ -155,7 +158,14 @@ def generate_target_nw(platform_name, arch, version):
                            'locales',
                            'snapshot_blob.bin',
                            'natives_blob.bin',
+                           'lib/libnw.so',
+                           'lib/libnode.so',
+                           'lib/libffmpeg.so',
                            ]
+        if flavor == 'sdk':
+            target['input'].append('nwjc')
+            target['input'].append('payload')
+            target['input'].append('chromedriver')
         if flavor in ['nacl','sdk'] :
             target['input'] += ['nacl_helper', 'nacl_helper_bootstrap', 'pnacl']
             if arch == 'x64':
@@ -171,6 +181,7 @@ def generate_target_nw(platform_name, arch, version):
                            'libEGL.dll',
                            'libGLESv2.dll',
                            'nw.dll',
+                           'node.dll',
                            'nw_elf.dll',
                            'nw.exe',
                            'locales',
@@ -179,7 +190,15 @@ def generate_target_nw(platform_name, arch, version):
                            'resources.pak',
                            'nw_100_percent.pak',
                            'nw_200_percent.pak',
+                           'dbghelp.dll',
+                           'ffmpeg.dll',
+                            # To be removed in CR51
+                           'libexif.dll',
                            ]
+        if flavor == 'sdk':
+            target['input'].append('nwjc.exe')
+            target['input'].append('payload.exe')
+            target['input'].append('chromedriver.exe')
         if flavor in ['nacl','sdk'] :
             target['input'].append('pnacl')
             if arch == 'x64':
@@ -191,6 +210,10 @@ def generate_target_nw(platform_name, arch, version):
                            'nwjs.app',
                            'credits.html',
                           ]
+        if flavor == 'sdk':
+            target['input'].append('nwjc')
+            target['input'].append('payload')
+            target['input'].append('chromedriver')
     else:
         print 'Unsupported platform: ' + platform_name
         exit(-1)
@@ -228,7 +251,14 @@ def generate_target_symbols(platform_name, arch, version):
                                 '-', arch])
     if platform_name == 'linux':
         target['compress'] = 'tar.gz'
-        target['input'] = ['nw.breakpad.' + arch]
+        target['input'] = [
+            'nw.breakpad.' + arch,
+            'node.so.breakpad.' + arch,
+            'nw.so.breakpad.' + arch
+        ]
+        if flavor in ['sdk', 'nacl']:
+            target['input'].append('nacl_helper.breakpad.' + arch)
+
         target['folder'] = True
     elif platform_name == 'win':
         target['compress'] = None
@@ -268,8 +298,14 @@ def generate_target_headers(platform_name, arch, version):
                     os.pardir, 'tmp', nw_headers_name)
             if os.path.isfile(os.path.join(binaries_location, nw_headers_name)):
                 os.remove(os.path.join(binaries_location, nw_headers_name))
+
+            f = open(nw_headers_path, 'rb')
+            checksum_file = open(os.path.join(binaries_location, 'SHASUMS256.txt'), 'w')
+            with f, checksum_file:
+                checksum_file.write('%s %s' % (sha256(f.read()).hexdigest(), nw_headers_name))
             shutil.move(nw_headers_path, binaries_location)
             target['input'].append(nw_headers_name)
+            target['input'].append('SHASUMS256.txt')
         else:
             #TODO, handle err
             print 'nw-headers generate failed'
@@ -299,7 +335,7 @@ def generate_target_others(platform_name, arch, version):
     target['output'] = ''
     target['compress'] = None
     if platform_name == 'win':
-        target['input'] = ['nw.exp', 'nw.lib']
+        target['input'] = ['nw.exp', 'nw.lib', 'node.exp', 'node.lib']
     elif platform_name == 'linux' :
         target['input'] = []
     else:
@@ -380,6 +416,8 @@ def make_packages(targets):
             # copy files into a folder then pack
             folder = os.path.join(dist_dir, t['output'])
             os.mkdir(folder)
+            if platform_name == 'linux':
+                os.mkdir(os.path.join(folder, 'lib'))
             for f in t['input']:
                 src = os.path.join(binaries_location, f)
                 dest = os.path.join(folder, f)
@@ -389,6 +427,9 @@ def make_packages(targets):
                     shutil.copy(src, dest)
             compress(dist_dir, dist_dir, t['output'], t['compress'])
             # remove temp folders
+            if (t.has_key('keep4test')) :
+                shutil.copytree(folder, nwfolder)
+            
             shutil.rmtree(folder)
         else:
             # single file

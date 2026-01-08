@@ -13,7 +13,9 @@
       'nw_window.idl',
       'nw_clipboard.idl',
       'nw_menu.idl',
+      'nw_screen.idl',
       'nw_shell.idl',
+      'nw_shortcut.idl',
       'nw_current_window_internal.idl',
       'nw_test.idl',
     ],
@@ -25,6 +27,7 @@
     'chromium_code': 1,
     'cc_dir': 'content/nw/src/api',
     'root_namespace': 'extensions::nwapi::%(namespace)s',
+    'bundle_name': 'nwjs',
     'impl_dir_': 'content/nw/src/api',
   },
 }

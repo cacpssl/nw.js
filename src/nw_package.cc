@@ -28,6 +28,7 @@
 #include "base/json/json_file_value_serializer.h"
 #include "base/json/json_string_value_serializer.h"
 #include "base/path_service.h"
+#include "base/strings/pattern.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_tokenizer.h"
 #include "base/strings/string_util.h"
@@ -150,7 +151,7 @@ void RelativePathToURI(FilePath root, base::DictionaryValue* manifest) {
     return;
 
   // Don't append path if there is already a prefix
-  if (MatchPattern(old, "*://*"))
+  if (base::MatchPattern(old, "*://*"))
     return;
 
   FilePath main_path = root.Append(FilePath::FromUTF8Unsafe(old));
@@ -170,25 +171,44 @@ std::wstring ASCIIToWide(const std::string& ascii) {
 Package::Package()
     : path_(),
       self_extract_(true) {
-  CommandLine* command_line = CommandLine::ForCurrentProcess();
-  LOG(INFO) << command_line->GetCommandLineString();
-  // Try to load from the folder where the exe resides.
+
+  base::FilePath path;
+  
+  // 1. try to extract self
+  self_extract_ = true;
+  path = GetSelfPath();
+  if (InitFromPath(path))
+    return;
+
+  // 2. try to load from the folder where the exe resides.
   // Note: self_extract_ is true here, otherwise a 'Invalid Package' error
   // would be triggered.
-  base::FilePath path = GetSelfPath().DirName();
+  path = GetSelfPath().DirName();
 #if defined(OS_MACOSX)
   path = path.DirName().DirName().DirName();
 #endif
   if (InitFromPath(path))
     return;
 
+  // 3. try to load from <exe-folder>/package.nw
   path = path.AppendASCII("package.nw");
   if (InitFromPath(path))
     return;
 
-  // Then see if we have arguments and extract it.
+  // 4. see if we have arguments and extract it.
+  CommandLine* command_line = CommandLine::ForCurrentProcess();
+  // LOG(INFO) << command_line->GetCommandLineString();
   const base::CommandLine::StringVector& args = command_line->GetArgs();
 
+  // 4.1. try --nwapp= argument
+  if (command_line->HasSwitch("nwapp")) {
+    path = command_line->GetSwitchValuePath("nwapp");
+    self_extract_ = false;
+    if (InitFromPath(path))
+      return;
+  }
+
+  // 4.2 try first CLI argument
   if (args.size() > 0) {
     self_extract_ = false;
     path = FilePath(args[0]);
@@ -196,14 +216,7 @@ Package::Package()
       return;
   }
 
-#if defined(OS_MACOSX)
-  self_extract_ = true;
-  // Try to extract self.
-  path = GetSelfPath();
-  if (InitFromPath(path))
-    return;
-#endif
-  // Finally we init with default settings.
+  // 5. init with default settings
   self_extract_ = false;
   InitWithDefault();
 }

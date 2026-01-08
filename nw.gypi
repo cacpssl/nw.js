@@ -524,8 +524,6 @@
         ['OS=="linux"', {
           'dependencies': [
             '<(DEPTH)/chrome/browser/ui/libgtk2ui/libgtk2ui.gyp:gtk2ui',
-            '<(DEPTH)/build/linux/system.gyp:gio',
-            '<(DEPTH)/build/linux/system.gyp:gtk',
           ],
           'sources': [
             'src/browser/shell_download_manager_delegate_gtk.cc',
@@ -628,7 +626,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(DEPTH)/base/base.gyp:base',
-        '<(DEPTH)/third_party/node/node.gyp:node',
+        #'<(DEPTH)/third_party/node/node.gyp:node',
         '<(DEPTH)/third_party/WebKit/public/blink.gyp:blink',
         '<(DEPTH)/third_party/WebKit/Source/wtf/wtf.gyp:wtf',
         '<(DEPTH)/third_party/zlib/zlib.gyp:minizip',
@@ -637,8 +635,12 @@
         '<(DEPTH)/content/nw/src/api/api.gyp:nw_api',
         '<(DEPTH)/content/nw/src/api/api_registration.gyp:nw_api_registration',
         '<(DEPTH)/extensions/browser/api/api_registration.gyp:extensions_api_registration',
+        '<(DEPTH)/components/components.gyp:policy',
+        '<(DEPTH)/third_party/protobuf/protobuf.gyp:protobuf_lite',
+        '<(DEPTH)/third_party/webrtc/modules/modules.gyp:desktop_capture',
       ],
       'include_dirs': [
+        '<(DEPTH)/third_party',
         '<(DEPTH)/third_party/mojo/src',
         '<(SHARED_INTERMEDIATE_DIR)/blink',
         '<(SHARED_INTERMEDIATE_DIR)/blink/bindings/core/v8/',
@@ -658,6 +660,10 @@
         'src/api/nw_object_api.h',
         'src/api/nw_shell_api.cc',
         'src/api/nw_shell_api.h',
+        'src/api/nw_screen_api.cc',
+        'src/api/nw_screen_api.h',
+        'src/api/nw_shortcut_api.cc',
+        'src/api/nw_shortcut_api.h',
         'src/api/object_manager.cc',
         'src/api/object_manager.h',
         'src/api/object_manager_factory.cc',
@@ -670,14 +676,21 @@
         'src/api/menuitem/menuitem.h',
         'src/api/shell/shell.cc',
         'src/api/shell/shell.h',
+        'src/api/tray/tray.cc',
+        'src/api/tray/tray.h',
         'src/nw_content.cc',
         'src/nw_content.h',
         'src/nw_custom_bindings.cc',
         'src/nw_custom_bindings.h',
+        'src/policy_cert_verifier.cc',
+        'src/policy_cert_verifier.h',
+        'src/nw_content_verifier_delegate.cc',
+        'src/nw_content_verifier_delegate.h',
       ],
       'conditions': [
         ['OS=="win" or OS=="linux"', {
           'sources': [
+            'src/api/tray/tray_aura.cc',
             'src/api/menu/menu_delegate.cc',
             'src/api/menu/menu_delegate.h',
             'src/api/menu/menu_views.cc',
@@ -693,12 +706,15 @@
         }],
         ['OS=="mac"', {
           'sources': [
+            'src/api/nw_window_api_mac.mm',
+            'src/api/nw_menu_api_mac.mm',
             'src/api/menuitem/menuitem_mac.mm',
             'src/api/menu/menu_mac.mm',
             'src/api/menu/menu_delegate_mac.h',
             'src/api/menu/menu_delegate_mac.mm',
             'src/api/menuitem/menuitem_delegate_mac.h',
             'src/api/menuitem/menuitem_delegate_mac.mm',
+            'src/api/tray/tray_mac.mm',
             'src/nw_content_mac.h',
             'src/nw_content_mac.mm',
           ],
@@ -789,30 +805,6 @@
       'target_name': 'nw_strip_symbol',
       'type': 'none',
       'conditions': [
-        ['OS=="mac"', {
-          'variables': {
-          },
-          'actions': [
-            {
-              'action_name': 'dump_symbol',
-              'inputs': [
-                '<(DEPTH)/content/nw/tools/dump_mac_syms',
-                '<(PRODUCT_DIR)/dump_syms',
-              ],
-              'outputs': [
-                '<(PRODUCT_DIR)/nwjs.breakpad.tar',
-              ],
-              'action': ['<(DEPTH)/content/nw/tools/dump_mac_syms',
-                         ],
-              'message': 'Dumping breakpad symbols to <(_outputs)',
-              'process_outputs_as_sources': 1,
-            },
-          ],
-          'dependencies': [
-            '<(DEPTH)/chrome/chrome.gyp:nw',
-            '../breakpad/breakpad.gyp:dump_syms',
-          ],
-        }],
        ['OS=="win"', {
           'actions': [
             {
@@ -821,6 +813,7 @@
                 '<(DEPTH)/content/nw/tools/dump_win_syms.py',
                 '<(PRODUCT_DIR)/nw.exe',
                 '<(PRODUCT_DIR)/nw.dll',
+                '<(PRODUCT_DIR)/node.dll',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/nw.sym.7z',
@@ -829,6 +822,7 @@
                          '<(DEPTH)/content/nw/tools/dump_win_syms.py',
                          '<(PRODUCT_DIR)/nw.exe',
                          '<(PRODUCT_DIR)/nw.dll',
+                         '<(PRODUCT_DIR)/node.dll',
                          '<(PRODUCT_DIR)/nw.sym.7z',
                          ],
               'message': 'Dumping breakpad symbols to <(_outputs)',
@@ -836,7 +830,7 @@
             },
           ],
           'dependencies': [
-            '<(DEPTH)/chrome/chrome.gyp:nw',
+            'nwjs',
           ],
         }],
         ['OS=="linux"', {
@@ -862,10 +856,71 @@
               'message': 'Dumping breakpad symbols to <(_outputs)',
               'process_outputs_as_sources': 1,
             },
+            {
+              'action_name': 'dump_symbol_and_strip_2',
+              'inputs': [
+                '<(DEPTH)/content/nw/tools/dump_app_syms',
+                '<(PRODUCT_DIR)/dump_syms',
+                '<(PRODUCT_DIR)/lib/libnw.so',
+              ],
+              'outputs': [
+                '<(PRODUCT_DIR)/nw.so.breakpad.<(target_arch)',
+              ],
+              'action': ['<(DEPTH)/content/nw/tools/dump_app_syms',
+                         '<(PRODUCT_DIR)/dump_syms',
+                         '<(linux_strip_binary)',
+                         '<(PRODUCT_DIR)/lib/libnw.so',
+                         '<@(_outputs)'],
+              'message': 'Dumping breakpad symbols to <(_outputs)',
+              'process_outputs_as_sources': 1,
+            },
+            {
+              'action_name': 'dump_symbol_and_strip_3',
+              'inputs': [
+                '<(DEPTH)/content/nw/tools/dump_app_syms',
+                '<(PRODUCT_DIR)/dump_syms',
+                '<(PRODUCT_DIR)/lib/libnode.so',
+              ],
+              'outputs': [
+                '<(PRODUCT_DIR)/node.so.breakpad.<(target_arch)',
+              ],
+              'action': ['<(DEPTH)/content/nw/tools/dump_app_syms',
+                         '<(PRODUCT_DIR)/dump_syms',
+                         '<(linux_strip_binary)',
+                         '<(PRODUCT_DIR)/lib/libnode.so',
+                         '<@(_outputs)'],
+              'message': 'Dumping breakpad symbols to <(_outputs)',
+              'process_outputs_as_sources': 1,
+            },
           ],
           'dependencies': [
-            '<(DEPTH)/chrome/chrome.gyp:nw',
+            'nwjs',
             '../breakpad/breakpad.gyp:dump_syms',
+          ],
+        }],
+        ['OS=="linux" and disable_nacl==0', {
+          'variables': {
+            'linux_strip_binary': 1,
+          },
+          'actions': [
+            {
+              'action_name': 'dump_symbol_and_strip_4',
+              'inputs': [
+                '<(DEPTH)/content/nw/tools/dump_app_syms',
+                '<(PRODUCT_DIR)/dump_syms',
+                '<(PRODUCT_DIR)/nacl_helper',
+              ],
+              'outputs': [
+                '<(PRODUCT_DIR)/nacl_helper.breakpad.<(target_arch)',
+              ],
+              'action': ['<(DEPTH)/content/nw/tools/dump_app_syms',
+                         '<(PRODUCT_DIR)/dump_syms',
+                         '<(linux_strip_binary)',
+                         '<(PRODUCT_DIR)/nacl_helper',
+                         '<@(_outputs)'],
+              'message': 'Dumping breakpad symbols to <(_outputs)',
+              'process_outputs_as_sources': 1,
+            },
           ],
         }],
       ],
@@ -880,6 +935,8 @@
               'action_name': 'strip_nw_binaries',
               'inputs': [
                 '<(PRODUCT_DIR)/chromedriver',
+                '<(PRODUCT_DIR)/nwjc',
+                '<(PRODUCT_DIR)/payload',
               ],
               'outputs': [
                 '<(PRODUCT_DIR)/strip_binaries.stamp',
@@ -896,6 +953,33 @@
       ],
     },
     {
+      'target_name': 'nwjs',
+      'type': 'none',
+      'dependencies': [
+         '<(DEPTH)/chrome/chrome.gyp:chrome',
+         '<(DEPTH)/third_party/node/node.gyp:node',
+         '<(DEPTH)/v8/tools/gyp/v8.gyp:nwjc',
+         'payload',
+      ],
+      'conditions': [
+        ['disable_nacl==0', {
+          'dependencies': [
+            '<(DEPTH)/components/nacl.gyp:nacl',
+          ]
+        }],
+        [ 'OS=="mac"', {
+          'copies': [
+            {
+              'destination': '<(PRODUCT_DIR)/<(mac_product_name).app/Contents/Versions/<(version_full)/<(mac_product_name) Framework.framework/',
+              'files': [
+                '<(PRODUCT_DIR)/libnode.dylib',
+              ],
+            },
+          ],
+        }],
+      ],
+    },
+    {
       'target_name': 'dist',
       'type': 'none',
       'variables': {
@@ -905,7 +989,7 @@
             'icudat_path': '<(DEPTH)/third_party/icu/source/data/in/icudtl.dat',
           }, {
             'package_mode': 'nosdk',
-            'icudat_path': '<(DEPTH)/third_party/icu/android/icudtl.dat',
+            'icudat_path': '<(DEPTH)/third_party/icu/source/data/in/icudtl.dat',
           }],
           ['disable_nacl==0 and nwjs_sdk==0', {
             'package_mode': 'nacl',
@@ -947,6 +1031,24 @@
       ],
     },
     {
+      'target_name': 'payload',
+      'type': 'executable',
+      'sources': [
+        'tools/payload.cc',
+      ],
+      'dependencies': [
+        '<(DEPTH)/base/base.gyp:base',
+        '<(DEPTH)/extensions/extensions.gyp:extensions_browser',
+      ],
+      'conditions': [
+        ['OS=="win" and win_use_allocator_shim==1', {
+          'dependencies': [
+            '<(DEPTH)/base/allocator/allocator.gyp:allocator',
+          ],
+        }],
+      ],
+    },
+    {
       'target_name': 'test',
       'type': 'none',
       'dependencies': [
@@ -965,7 +1067,7 @@
             '<(PRODUCT_DIR)/run_tests.re',
           ],
           'action': ['python', '<(test_script)', '-d', '<(PRODUCT_DIR)',
-                     'remoting'],
+                     '-t', '80', 'remoting'],
         },
       ],
     },
@@ -1143,9 +1245,7 @@
                       '<(DEPTH)/content/nw/.git/index',
                       '<(DEPTH)/.git/index',
                       '<(DEPTH)/v8/.git/index',
-                      '<(DEPTH)/third_party/node/.git/index',
-                      '<(DEPTH)/third_party/WebKit/.git/index',
-                      '<(DEPTH)/breakpad/src/.git/index' ],
+                      '<(DEPTH)/third_party/node/.git/index'],
                 'outputs': [ '<(nw_id_header)' ],
                 'msvs_cygwin_shell': 0,
                 'action':

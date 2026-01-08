@@ -21,6 +21,7 @@
 #include "content/nw/src/api/menuitem/menuitem.h"
 
 #include "base/logging.h"
+#include "base/strings/string_util.h"
 #include "base/values.h"
 #include "content/nw/src/api/object_manager.h"
 #include "content/nw/src/api/menu/menu.h"
@@ -28,6 +29,95 @@
 #include <string.h>
 
 namespace nw {
+
+namespace {
+
+typedef std::map<std::string,std::string> KeyMap;
+/*
+{
+  {"`"    , "Backquote"},
+  {"\\"   , "Backslash"},
+  {"["    , "BracketLeft"},
+  {"]"    , "BracketRight"},
+  {","    , "Comma"},
+  {"="    , "Equal"},
+  {"-"    , "Minus"},
+  {"."    , "Period"},
+  {"'"    , "Quote"},
+  {";"    , "Semicolon"},
+  {"/"    , "Slash"},
+  {"\n"   , "Enter"},
+  {"\t"   , "Tab"},
+  {"UP"   , "ArrowUp"},
+  {"DOWN" , "ArrowDown"},
+  {"LEFT" , "ArrowLeft"},
+  {"RIGHT", "ArrowRight"},
+  {"ESC"  , "Escape"},
+  {"MEDIANEXTTRACK", "MediaTrackNext"},
+  {"MEDIAPREVTRACK", "MediaTrackPrevious"}
+};
+*/
+
+static KeyMap InitKeyMap() {
+  KeyMap result;
+  result["`"] = "Backquote";
+  result["\\"] = "Backslash";
+  result["["] = "BracketLeft";
+  result["]"] = "BracketRight";
+  result[","] = "Comma";
+  result["="] = "Equal";
+  result["-"] = "Minus";
+  result["."] = "Period";
+  result["'"] = "Quote";
+  result[";"] = "Semicolon";
+  result["/"] = "Slash";
+  result["\n"] = "Enter";
+  result["\t"] = "Tab";
+  result["UP"] = "ArrowUp";
+  result["DOWN"] = "ArrowDown";
+  result["LEFT"] = "ArrowLeft";
+  result["RIGHT"] = "ArrowRight";
+  result["ESC"] = "Escape";
+  result["MEDIANEXTTRACK"] = "MediaTrackNext";
+  result["MEDIAPREVTRACK"] = "MediaTrackPrevious";
+  return result;
+}
+
+static KeyMap keymap = InitKeyMap();
+
+}
+
+ui::KeyboardCode GetKeycodeFromText(std::string text){
+  ui::KeyboardCode retval = ui::VKEY_UNKNOWN;
+  if (text.size() != 0){
+    std::string upperText = base::ToUpperASCII(text);
+    std::string keyName = text;
+    bool found = false;
+    if (upperText.size() == 1){
+      char key = upperText[0];
+      if (key>='0' && key<='9'){//handle digital
+        keyName = "Digit" + upperText;
+        found = true;
+      } else if (key>='A'&&key<='Z'){//handle alphabet
+        keyName = "Key" + upperText;
+        found = true;
+      }
+    }
+
+    if (!found) {
+      KeyMap::iterator it = keymap.find(upperText);
+      if (it != keymap.end()) {
+        keyName = it->second;
+        found = true;
+      }
+    }
+
+    // build keyboard code
+    ui::DomCode domCode = ui::KeycodeConverter::CodeStringToDomCode(keyName.c_str());
+    retval = ui::DomCodeToUsLayoutKeyboardCode(domCode);
+  }
+  return retval;
+}
 
 MenuItem::MenuItem(int id,
                    const base::WeakPtr<ObjectManager>& object_manager,
@@ -43,7 +133,7 @@ MenuItem::~MenuItem() {
 
 void MenuItem::Call(const std::string& method,
                     const base::ListValue& arguments,
-                    content::RenderViewHost* rvh) {
+                    content::RenderFrameHost* rvh) {
   if (method == "SetLabel") {
     std::string label;
     arguments.GetString(0, &label);
@@ -82,6 +172,17 @@ void MenuItem::Call(const std::string& method,
     arguments.GetString(0, &mod);
     SetModifiers(mod);
 #endif
+  } else {
+    NOTREACHED() << "Invalid call to MenuItem method:" << method
+                 << " arguments:" << arguments;
+  }
+}
+
+void MenuItem::CallSync(const std::string& method,
+                        const base::ListValue& arguments,
+                        base::ListValue* result) {
+  if (method == "GetChecked") {
+    result->AppendBoolean(GetChecked());
   } else {
     NOTREACHED() << "Invalid call to MenuItem method:" << method
                  << " arguments:" << arguments;

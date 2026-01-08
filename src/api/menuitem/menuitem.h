@@ -23,6 +23,9 @@
 
 #include "base/compiler_specific.h"
 #include "content/nw/src/api/base/base.h"
+#include "ui/events/keycodes/dom/keycode_converter.h"
+#include "ui/events/keycodes/keyboard_codes.h"//for keycode
+#include "ui/events/keycodes/keyboard_code_conversion.h"
 
 #include <string>
 
@@ -43,6 +46,8 @@ class MenuItemDelegate;
 
 namespace nw {
 
+ui::KeyboardCode GetKeycodeFromText(std::string text);
+
 class Menu;
 
 #if defined(OS_WIN) || defined(OS_LINUX)
@@ -58,9 +63,12 @@ class MenuItem : public Base {
            const std::string& extension_id);
   ~MenuItem() override;
 
-   void Call(const std::string& method,
+  void Call(const std::string& method,
              const base::ListValue& arguments,
-             content::RenderViewHost* rvh = nullptr) override;
+             content::RenderFrameHost* rvh = nullptr) override;
+  void CallSync(const std::string& method,
+                        const base::ListValue& arguments,
+                        base::ListValue* result) override;
 
 #if defined(OS_WIN) || defined(OS_LINUX)
    bool AcceleratorPressed(const ui::Accelerator& accelerator) override;
@@ -84,6 +92,8 @@ class MenuItem : public Base {
   void SetEnabled(bool enabled);
   void SetChecked(bool checked);
   void SetSubmenu(Menu* sub_menu);
+
+  bool GetChecked();
 
   // Template icon works only on Mac OS X
   void SetIconIsTemplate(bool isTemplate);
@@ -118,7 +128,6 @@ class MenuItem : public Base {
   Menu* submenu_;
   bool enable_shortcut_;
 
-  bool super_down_flag_;
   bool meta_down_flag_;
 
 #endif

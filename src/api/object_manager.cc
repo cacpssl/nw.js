@@ -37,7 +37,7 @@
 //#include "content/nw/src/api/screen/screen.h"
 #include "content/nw/src/api/shell/shell.h"
 //#include "content/nw/src/api/shortcut/shortcut.h"
-//#include "content/nw/src/api/tray/tray.h"
+#include "content/nw/src/api/tray/tray.h"
 #include "content/nw/src/common/shell_switches.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
@@ -96,11 +96,11 @@ void ObjectManager::OnAllocateObject(int object_id,
   } else if (type == "MenuItem") {
     objects_registry_.AddWithID(
        new MenuItem(object_id, weak_ptr_factory_.GetWeakPtr(), option, extension_id), object_id);
+  } else if (type == "Tray") {
+    objects_registry_.AddWithID(new Tray(object_id, weak_ptr_factory_.GetWeakPtr(), option, extension_id), object_id);
   }
 #if 0
-  else if (type == "Tray") {
-    objects_registry_.AddWithID(new Tray(object_id, weak_ptr_factory_.GetWeakPtr(), option), object_id);
-  } else if (type == "Clipboard") {
+  else if (type == "Clipboard") {
     objects_registry_.AddWithID(
         new Clipboard(object_id, weak_ptr_factory_.GetWeakPtr(), option), object_id);
   } else if (type == "Window") {
@@ -120,13 +120,19 @@ void ObjectManager::OnAllocateObject(int object_id,
 
 void ObjectManager::OnDeallocateObject(int object_id) {
   DLOG(INFO) << "OnDeallocateObject: object_id:" << object_id;
-  if (objects_registry_.Lookup(object_id))
+  Base* obj = objects_registry_.Lookup(object_id);
+  if (obj) {
+    if (obj->delay_destruction()) {
+      obj->set_pending_destruction(true);
+      return;
+    }
     objects_registry_.Remove(object_id);
+  }
   objects_.erase(object_id);
 }
 
 void ObjectManager::OnCallObjectMethod(
-    content::RenderViewHost* rvh,
+    content::RenderFrameHost* rvh,
     int object_id,
     const std::string& type,
     const std::string& method,
@@ -147,7 +153,7 @@ void ObjectManager::OnCallObjectMethod(
 }
 
 void ObjectManager::OnCallObjectMethodSync(
-    content::RenderViewHost* rvh,
+    content::RenderFrameHost* rvh,
     int object_id,
     const std::string& type,
     const std::string& method,
@@ -169,7 +175,7 @@ void ObjectManager::OnCallObjectMethodSync(
 }
 
 void ObjectManager::OnCallStaticMethod(
-    content::RenderViewHost* rvh,
+    content::RenderFrameHost* rvh,
     const std::string& type,
     const std::string& method,
     const base::ListValue& arguments) {
@@ -191,7 +197,7 @@ void ObjectManager::OnCallStaticMethod(
 }
 
 void ObjectManager::OnCallStaticMethodSync(
-    content::RenderViewHost* rvh,
+    content::RenderFrameHost* rvh,
     const std::string& type,
     const std::string& method,
     const base::ListValue& arguments,
@@ -203,7 +209,7 @@ void ObjectManager::OnCallStaticMethodSync(
 #if 0
   if (type == "App") {
     content::Shell* shell =
-        content::Shell::FromRenderViewHost(render_view_host());
+        content::Shell::FromRenderFrameHost(render_view_host());
     nwapi::App::Call(shell, method, arguments, result, this);
     return;
   } else if (type == "Screen") {
@@ -223,10 +229,10 @@ void ObjectManager::SendEvent(Base* object,
     return;
   scoped_ptr<base::ListValue> arguments(args.DeepCopy());
   arguments->Insert(0, new base::FundamentalValue(object->id()));
-  scoped_ptr<Event> event(new Event("NWObject" + event_name, arguments.Pass()));
+  scoped_ptr<Event> event(new Event(extensions::events::UNKNOWN, "NWObject" + event_name, std::move(arguments)));
   event->restrict_to_browser_context = browser_context_;
   event->user_gesture = EventRouter::USER_GESTURE_ENABLED;
-  event_router->DispatchEventToExtension(object->extension_id_, event.Pass());
+  event_router->DispatchEventToExtension(object->extension_id_, std::move(event));
   
 }
 }  // namespace nw

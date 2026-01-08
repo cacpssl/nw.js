@@ -38,41 +38,6 @@
 #include "ui/views/focus/focus_manager.h"
 #include "vector"
 
-#if defined(OS_WIN)
-#include "ui/gfx/gdi_util.h"
-#include "ui/gfx/icon_util.h"
-#include "ui/views/controls/menu/menu_2.h"
-#endif
-
-namespace {
-
-#if defined(OS_WIN)
-
-HBITMAP GetNativeBitmapFromSkBitmap(const SkBitmap& bitmap) {
-  int width = bitmap.width();
-  int height = bitmap.height();
-
-  BITMAPV4HEADER native_bitmap_header;
-  gfx::CreateBitmapV4Header(width, height, &native_bitmap_header);
-
-  HDC dc = ::GetDC(NULL);
-  void* bits;
-  HBITMAP native_bitmap = ::CreateDIBSection(dc,
-      reinterpret_cast<BITMAPINFO*>(&native_bitmap_header),
-      DIB_RGB_COLORS,
-      &bits,
-      NULL,
-      0);
-  DCHECK(native_bitmap);
-  ::ReleaseDC(NULL, dc);
-  bitmap.copyPixelsTo(bits, width * height * 4, width * 4);
-  return native_bitmap;
-}
-
-#endif
-} // namespace
-
-
 namespace ui {
 
 NwMenuModel::NwMenuModel(Delegate* delegate) : SimpleMenuModel(delegate) {
@@ -87,39 +52,20 @@ bool NwMenuModel::HasIcons() const {
 
 namespace nw {
 
-#if defined(OS_WIN)
-// The width of the icon for the menuitem
-static const int kIconWidth = 16;
-// The height of the icon for the menuitem
-static const int kIconHeight = 16;
-#endif
-
 void Menu::Create(const base::DictionaryValue& option) {
   is_menu_modified_ = true;
   menu_delegate_.reset(new MenuDelegate(object_manager()));
   menu_model_.reset(new ui::NwMenuModel(menu_delegate_.get()));
-#if defined(OS_WIN)
-  menu_.reset(new views::NativeMenuWin(menu_model_.get(), NULL));
-#endif
 
   focus_manager_ = NULL;
   window_ = NULL;
 
   std::string type;
 
-#if defined(OS_WIN)
-  if (option.GetString("type", &type) && type == "menubar")
-    menu_->set_is_popup_menu(false);
-#endif
   menu_items_.empty();
 }
 
 void Menu::Destroy() {
-#if defined(OS_WIN)
-  for (size_t index = 0; index < icon_bitmaps_.size(); ++index) {
-    ::DeleteObject(icon_bitmaps_[index]);
-  }
-#endif
 }
 
 void Menu::Append(MenuItem* menu_item) {
@@ -160,7 +106,7 @@ void Menu::Remove(MenuItem* menu_item, int pos) {
   menu_item->menu_ = NULL;
 }
 
-void Menu::Popup(int x, int y, content::RenderViewHost* rvh) {
+void Menu::Popup(int x, int y, content::RenderFrameHost* rfh) {
   // Rebuild();
 
   // Map point from document to screen.
@@ -168,7 +114,7 @@ void Menu::Popup(int x, int y, content::RenderViewHost* rvh) {
 
   // Convert from content coordinates to window coordinates.
   // This code copied from chrome_web_contents_view_delegate_views.cc
-  aura::Window* target_window = GetActiveNativeView(rvh->GetMainFrame());
+  aura::Window* target_window = GetActiveNativeView(rfh);
   aura::Window* root_window = target_window->GetRootWindow();
   views::Widget* top_level_widget =
     views::Widget::GetTopLevelWidgetForNativeView(target_window);
@@ -178,64 +124,18 @@ void Menu::Popup(int x, int y, content::RenderViewHost* rvh) {
     screen_position_client->ConvertPointToScreen(target_window,
              &screen_point);
   }
+  set_delay_destruction(true);
   views::MenuRunner runner(menu_model_.get(), views::MenuRunner::CONTEXT_MENU);
-  if (views::MenuRunner::MENU_DELETED ==
+  ignore_result(
       runner.RunMenuAt(top_level_widget,
                        NULL,
                        gfx::Rect(screen_point, gfx::Size()),
                        views::MENU_ANCHOR_TOPRIGHT,
-                       ui::MENU_SOURCE_NONE))
-    return;
-  // menu_->RunMenuAt(screen_point, views::Menu2::ALIGN_TOPLEFT);
+                       ui::MENU_SOURCE_NONE));
+  set_delay_destruction(false);
+  if (pending_destruction())
+    object_manager_->OnDeallocateObject(id_);
 }
-
-#if defined(OS_WIN)
-void Menu::Rebuild(const HMENU *parent_menu) {
-  if (is_menu_modified_) {
-    // Refresh menu before show.
-    menu_->Rebuild(NULL);
-    menu_->UpdateStates();
-#if 0
-    for (size_t index = 0; index < icon_bitmaps_.size(); ++index) {
-      ::DeleteObject(icon_bitmaps_[index]);
-    }
-    icon_bitmaps_.clear();
-
-    HMENU native_menu = parent_menu == NULL ?
-        menu_->GetNativeMenu() : *parent_menu;
-
-    for (int model_index = 0;
-         model_index < menu_model_->GetItemCount();
-         ++model_index) {
-      int command_id = menu_model_->GetCommandIdAt(model_index);
-
-      if (menu_model_->GetTypeAt(model_index) == ui::MenuModel::TYPE_COMMAND ||
-          menu_model_->GetTypeAt(model_index) == ui::MenuModel::TYPE_SUBMENU) {
-        gfx::Image icon;
-        menu_model_->GetIconAt(model_index, &icon);
-        if (!icon.IsEmpty()) {
-          SkBitmap resized_bitmap =
-              skia::ImageOperations::Resize(*icon.ToSkBitmap(),
-                                            skia::ImageOperations::RESIZE_GOOD,
-                                            kIconWidth,
-                                            kIconHeight);
-          HBITMAP icon_bitmap = GetNativeBitmapFromSkBitmap(resized_bitmap);
-          ::SetMenuItemBitmaps(native_menu, command_id, MF_BYCOMMAND,
-                               icon_bitmap, icon_bitmap);
-          icon_bitmaps_.push_back(icon_bitmap);
-        }
-      }
-
-      MenuItem* item = object_manager()->GetApiObject<MenuItem>(command_id);
-      if (item != NULL && item->submenu_) {
-        item->submenu_->Rebuild(&native_menu);
-      }
-    }
-#endif
-    is_menu_modified_ = false;
-  }
-}
-#endif
 
 void Menu::UpdateKeys(views::FocusManager *focus_manager){
   if (focus_manager == NULL){
@@ -251,26 +151,7 @@ void Menu::UpdateKeys(views::FocusManager *focus_manager){
 }
 
 void Menu::UpdateStates() {
-#if defined(OS_WIN)
-  if (window_)
-    window_->menu_->menu_->UpdateStates();
-#endif
 }
-
-#if defined(OS_WIN)
-void Menu::SetWindow(extensions::AppWindow* win) {
-  window_ = win;
-  for (int model_index = 0;
-       model_index < menu_model_->GetItemCount();
-       ++model_index) {
-    int command_id = menu_model_->GetCommandIdAt(model_index);
-    MenuItem* item = object_manager()->GetApiObject<MenuItem>(command_id);
-    if (item != NULL && item->submenu_) {
-      item->submenu_->SetWindow(win);
-    }
-  }
-}
-#endif
 
 aura::Window* Menu::GetActiveNativeView(content::RenderFrameHost* rfh) {
   content::WebContents* web_contents =

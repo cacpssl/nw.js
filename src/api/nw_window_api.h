@@ -14,19 +14,46 @@ class WebContents;
 }
 
 namespace extensions {
+class AppWindow;
 
-class NwCurrentWindowInternalShowDevToolsFunction : public AsyncExtensionFunction {
+class NwCurrentWindowInternalCloseFunction : public AsyncExtensionFunction {
  public:
-  NwCurrentWindowInternalShowDevToolsFunction();
+  NwCurrentWindowInternalCloseFunction() {};
+  static void DoClose(AppWindow*);
 
  protected:
-  ~NwCurrentWindowInternalShowDevToolsFunction() override;
+  ~NwCurrentWindowInternalCloseFunction() override {};
 
   // ExtensionFunction:
   bool RunAsync() override;
-  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.showDevTools", UNKNOWN)
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.close", UNKNOWN)
+};
+
+
+class NwCurrentWindowInternalShowDevToolsInternalFunction : public AsyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalShowDevToolsInternalFunction() {};
+
+ protected:
+  ~NwCurrentWindowInternalShowDevToolsInternalFunction() override {};
+
+  // ExtensionFunction:
+  bool RunAsync() override;
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.showDevToolsInternal", UNKNOWN)
  private:
-  void Callback();
+  void OnOpened();
+};
+
+class NwCurrentWindowInternalCloseDevToolsFunction : public AsyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalCloseDevToolsFunction() {};
+
+ protected:
+  ~NwCurrentWindowInternalCloseDevToolsFunction() override {};
+
+  // ExtensionFunction:
+  bool RunAsync() override;
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.closeDevTools", UNKNOWN)
 };
 
 class NwCurrentWindowInternalCapturePageInternalFunction : public AsyncExtensionFunction {
@@ -47,14 +74,14 @@ class NwCurrentWindowInternalCapturePageInternalFunction : public AsyncExtension
   DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.capturePageInternal", UNKNOWN)
 
  private:
-  typedef core_api::extension_types::ImageDetails ImageDetails;
+  typedef api::extension_types::ImageDetails ImageDetails;
 
   void CopyFromBackingStoreComplete(const SkBitmap& bitmap,
                                     content::ReadbackResponse response);
   void OnCaptureSuccess(const SkBitmap& bitmap);
 
   // The format (JPEG vs PNG) of the resulting image.  Set in RunAsync().
-  core_api::extension_types::ImageFormat image_format_;
+  api::extension_types::ImageFormat image_format_;
 
   // Quality setting to use when encoding jpegs.  Set in RunAsync().
   int image_quality_;
@@ -92,6 +119,166 @@ class NwCurrentWindowInternalSetMenuFunction : public AsyncExtensionFunction {
  private:
 
   DISALLOW_COPY_AND_ASSIGN(NwCurrentWindowInternalSetMenuFunction);
+};
+
+class NwCurrentWindowInternalSetBadgeLabelFunction : public AsyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalSetBadgeLabelFunction(){}
+
+ protected:
+  ~NwCurrentWindowInternalSetBadgeLabelFunction() override {}
+
+  // ExtensionFunction:
+  bool RunAsync() override;
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.setBadgeLabel", UNKNOWN)
+};
+
+class NwCurrentWindowInternalRequestAttentionInternalFunction : public AsyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalRequestAttentionInternalFunction(){}
+
+ protected:
+  ~NwCurrentWindowInternalRequestAttentionInternalFunction() override {}
+
+  // ExtensionFunction:
+  bool RunAsync() override;
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.requestAttentionInternal", UNKNOWN)
+ private:
+  DISALLOW_COPY_AND_ASSIGN(NwCurrentWindowInternalRequestAttentionInternalFunction);
+};
+  
+class NwCurrentWindowInternalSetProgressBarFunction : public AsyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalSetProgressBarFunction(){}
+
+ protected:
+  ~NwCurrentWindowInternalSetProgressBarFunction() override {}
+
+  // ExtensionFunction:
+  bool RunAsync() override;
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.setProgressBar", UNKNOWN)
+ private:
+  void Callback();
+};
+
+class NwCurrentWindowInternalReloadIgnoringCacheFunction : public AsyncExtensionFunction {
+ public:
+   NwCurrentWindowInternalReloadIgnoringCacheFunction() {}
+
+ protected:
+   ~NwCurrentWindowInternalReloadIgnoringCacheFunction() override {}
+
+   // ExtensionFunction:
+   bool RunAsync() override;
+   DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.reloadIgnoringCache", UNKNOWN)
+};
+
+class NwCurrentWindowInternalGetZoomFunction : public NWSyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalGetZoomFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+
+ protected:
+  ~NwCurrentWindowInternalGetZoomFunction() override {}
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.getZoom", UNKNOWN)
+};
+
+class NwCurrentWindowInternalSetZoomFunction : public NWSyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalSetZoomFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+
+ protected:
+  ~NwCurrentWindowInternalSetZoomFunction() override {}
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.setZoom", UNKNOWN)
+};
+
+class NwCurrentWindowInternalEnterKioskModeFunction : public AsyncExtensionFunction {
+ public:
+   NwCurrentWindowInternalEnterKioskModeFunction() {}
+
+ protected:
+   ~NwCurrentWindowInternalEnterKioskModeFunction() override {}
+
+   // ExtensionFunction:
+   bool RunAsync() override;
+   DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.enterKioskMode", UNKNOWN)
+};
+
+class NwCurrentWindowInternalLeaveKioskModeFunction : public AsyncExtensionFunction {
+ public:
+   NwCurrentWindowInternalLeaveKioskModeFunction() {}
+
+ protected:
+   ~NwCurrentWindowInternalLeaveKioskModeFunction() override {}
+
+   // ExtensionFunction:
+   bool RunAsync() override;
+   DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.leaveKioskMode", UNKNOWN)
+};
+
+class NwCurrentWindowInternalToggleKioskModeFunction : public AsyncExtensionFunction {
+ public:
+   NwCurrentWindowInternalToggleKioskModeFunction() {}
+
+ protected:
+   ~NwCurrentWindowInternalToggleKioskModeFunction() override {}
+
+   // ExtensionFunction:
+   bool RunAsync() override;
+   DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.toggleKioskMode", UNKNOWN)
+};
+
+class NwCurrentWindowInternalIsKioskInternalFunction : public NWSyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalIsKioskInternalFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+
+ protected:
+  ~NwCurrentWindowInternalIsKioskInternalFunction() override {}
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.isKioskInternal", UNKNOWN)
+};
+
+class NwCurrentWindowInternalSetShowInTaskbarFunction : public AsyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalSetShowInTaskbarFunction() {}
+
+ protected:
+  ~NwCurrentWindowInternalSetShowInTaskbarFunction() override {}
+  
+   // ExtensionFunction:
+   bool RunAsync() override;
+   DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.setShowInTaskbar", UNKNOWN)
+};
+
+class NwCurrentWindowInternalSetTitleInternalFunction : public NWSyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalSetTitleInternalFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+
+ protected:
+  ~NwCurrentWindowInternalSetTitleInternalFunction() override {}
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.setTitleInternal", UNKNOWN)
+};
+
+class NwCurrentWindowInternalGetTitleInternalFunction : public NWSyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalGetTitleInternalFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+
+ protected:
+  ~NwCurrentWindowInternalGetTitleInternalFunction() override {}
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.getTitleInternal", UNKNOWN)
+};
+
+class NwCurrentWindowInternalGetWinParamInternalFunction : public NWSyncExtensionFunction {
+ public:
+  NwCurrentWindowInternalGetWinParamInternalFunction() {}
+  bool RunNWSync(base::ListValue* response, std::string* error) override;
+
+ protected:
+  ~NwCurrentWindowInternalGetWinParamInternalFunction() override {}
+  DECLARE_EXTENSION_FUNCTION("nw.currentWindowInternal.getWinParamInternal", UNKNOWN)
 };
 
 } // namespace extensions

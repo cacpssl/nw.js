@@ -45,6 +45,7 @@ const char kSnapshot[] = "snapshot";
 const char kDomStorageQuota[] = "ds-quota";
 const char kNodejs[] = "nodejs";
 const char kChromeExtension[] = "extension";
+const char kVerifyContent[] = "verify-content";
 
 const char kmMain[]   = "main";
 const char kmName[]   = "name";
@@ -85,10 +86,10 @@ const char kmShowInTaskbar[] = "show_in_taskbar";
 const char kmKiosk[] = "kiosk";
 
 // Make windows stays on the top of all other windows.
-const char kmAlwaysOnTop[] = "always-on-top";
+const char kmAlwaysOnTop[] = "always_on_top";
 
 // Make window visible on all workspaces.
-const char kmVisibleOnAllWorkspaces[] = "visible-on-all-workspaces";
+const char kmVisibleOnAllWorkspaces[] = "visible_on_all_workspaces";
 
 // Whether we should support WebGL.
 const char kmWebgl[] = "webgl";
@@ -108,8 +109,8 @@ const char kmUserAgent[] = "user-agent";
 const char kmRemotePages[] = "node-remote";
 
 const char kmNewInstance[] = "new-instance";
-const char kmInjectJSDocStart[]  = "inject-js-start";
-const char kmInjectJSDocEnd[]  = "inject-js-end";
+const char kmInjectJSDocStart[]  = "inject_js_start";
+const char kmInjectJSDocEnd[]  = "inject_js_end";
 const char kmInjectCSS[] = "inject-css";
 
 #if defined(OS_WIN)
